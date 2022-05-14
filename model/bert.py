@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 
 class BERTEmbeddings(nn.Module):
     """
@@ -69,7 +70,7 @@ class MultiHeadedAttention(nn.Module):
         self.key_linear = nn.Linear(hidden_dim, hidden_dim)
         self.value_linear = nn.Linear(hidden_dim, hidden_dim)
         # 스코어 scale 변환용
-        self.scale = torch.sqrt(self.head_dim)
+        self.scale = math.sqrt(self.head_dim) 
         # dropout
         self.dropout = nn.Dropout(p = dropout_rate_attn)
         # 출력 레이어
@@ -151,20 +152,25 @@ class TransformerEncoder(nn.Module):
         """
         :param hidden_dim: hidden dim of transformer
         :param head_num: head sizes of multi-head attention
-        :param feed_forward_dim: feed_forward_hidden, usually 4*hidden_dim
+        :param ff_dim: feed_forward_hidden, usually 4*hidden_dim
         :param dropout_rate: dropout rate
         :param dropout_rate_attn : attention layer의 dropout rate
         """        
         super(TransformerEncoder, self).__init__()
+        #초기화
+        self.hidden_dim = hidden_dim
+        self.head_num = head_num
+        self.ff_dim = ff_dim
+        self.dropout_rate = dropout_rate
+        self.dropout_rate_attn = dropout_rate_attn
         # multi-head attn
-        self.attention = MultiHeadedAttention(head_num = head_num, hidden_dim = hidden_dim, dropout_rate_attn = dropout_rate_attn)
+        self.attention = MultiHeadedAttention(head_num = self.head_num, hidden_dim = self.hidden_dim, dropout_rate_attn = self.dropout_rate_attn)
         # sublayer connection - 1 (input embeddings + input embeddings attn)
-        self.input_sublayer = SublayerConnection(size=hidden_dim, dropout_rate = dropout_rate)
+        self.input_sublayer = SublayerConnection(hidden_dim = self.hidden_dim, dropout_rate = self.dropout_rate)
         # FFN
-        self.feed_forward = PositionwiseFeedForward(hidden_dim = hidden_dim, feed_forward_dim = ff_dim, dropout_rate = dropout_rate)
+        self.feed_forward = PositionwiseFeedForward(hidden_dim = self.hidden_dim, ff_dim = self.ff_dim, dropout_rate = self.dropout_rate)
         # sublayer connection - 2 (sublayer connection 1의 결과 + Feed Forward)
-        self.output_sublayer = SublayerConnection(size=hidden_dim, dropout_rate = dropout_rate)
-        # self.dropout = nn.Dropout(p = dropout_rate) -> 안 쓰이는 듯
+        self.output_sublayer = SublayerConnection(hidden_dim = self.hidden_dim, dropout_rate = self.dropout_rate)
     
     def forward(self, seq, mask):
         # attention 결과
@@ -180,15 +186,15 @@ class BERT(nn.Module):
     """
     BERT model : Bidirectional Encoder Representations from Transformers.
     """
-    def __init__(self, vocab_size = 30522, max_len = 512, hidden_dim = 768, layer_num = 12, head_num = 12, dropout_ratio = 0.1, dropout_ratio_attn = 0.1):
+    def __init__(self, vocab_size = 30522, max_len = 512, hidden_dim = 768, layer_num = 12, head_num = 12, dropout_rate = 0.1, dropout_rate_attn = 0.1):
         """
         :param vocab_size: vocab_size of total words
         :max_len : max len of seq
         :param hidden_dim: BERT model hidden size
         :param layer_num: numbers of Transformer blocks(layers)
         :param head_num : number of attention heads
-        :param dropout_ratio : dropout rate
-        :param dropout_ratio_attn : attention layer의 dropout ratio
+        :param dropout_rate : dropout rate
+        :param dropout_rate_attn : attention layer의 dropout rate
         """
         super(BERT, self).__init__()
         # 기존 item에 [PAD], [MASK] 토큰이 추가 돼 item 개수 + 2
@@ -201,8 +207,8 @@ class BERT(nn.Module):
         self.head_num = head_num
         self.head_dim = hidden_dim / head_num
         # dropout 비율
-        self.dropout_ratio = dropout_ratio
-        self.dropout_ratio_attn = dropout_ratio_attn
+        self.dropout_rate = dropout_rate
+        self.dropout_rate_attn = dropout_rate_attn
         # paper noted they used 4*hidden_size for ff_network_hidden_size
         self.ff_dim = hidden_dim * 4
         # embedding
@@ -210,7 +216,7 @@ class BERT(nn.Module):
         # Transformer Encoder 
         self.transformer_encoders = nn.ModuleList(
             [TransformerEncoder(hidden_dim = self.hidden_dim, head_num = self.head_num, ff_dim = self.ff_dim, \
-                                dropout_ratio = self.dropout_ratio, dropout_ratio_attn = self.dropout_ratio_attn) for _ in range(self.layer_num)])
+                                dropout_rate = self.dropout_rate, dropout_rate_attn = self.dropout_rate_attn) for _ in range(self.layer_num)])
 
     def forward(self, seq, segment_info = None):
         # attention masking for padded token
