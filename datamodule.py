@@ -24,7 +24,7 @@ class DataModule(pl.LightningDataModule):
     """
     DataModule : Dataset을 받아와 Dataloader로 반환.
     """
-    def __init__(self, args = default_args):
+    def __init__(self, args):
         super(DataModule, self).__init__()
         # seq 최대 길이
         self.max_len = args.max_len
@@ -48,27 +48,29 @@ class DataModule(pl.LightningDataModule):
         pass
     def setup(self, stage = None):
         """
-        Train/Test 데이터셋 생성.
+        Train/Valid/Test 데이터셋 생성.
         """
-        # Train 데이터셋 생성
+        # Train/Valid 데이터셋 생성
         if stage == "fit" or stage is None:
-            """
-            Train 데이터셋 불러와야 하지만 vocab_size를 미리 알기 위해서 __init__에서 생성.
-            """
-            pass
+            # train data
+            # vocab_size 얻기 위해서 미리 선언.
+            # valid data
+            self.movie_valid = MovieLens(mode = "Valid", max_len = self.max_len, mask_prob = self.mask_prob, data_dir = self.data_dir, \
+                                          neg_sample_size = self.neg_sample_size)
         # Test 데이터셋 생성
         if stage == "test" or stage is None:
+
             self.movie_test = MovieLens(mode = "Test", max_len = self.max_len, mask_prob = self.mask_prob, data_dir = self.data_dir, \
                                           neg_sample_size = self.neg_sample_size)
     def train_dataloader(self):
-        return DataLoader(self.movie_train, batch_size = self.batch_size, shuffle = True)
+        return DataLoader(self.movie_train, batch_size = self.batch_size, shuffle = True) 
     
     def val_dataloader(self):
-        pass
+        return DataLoader(self.movie_valid, batch_size = self.batch_size)
     
     def test_dataloader(self):
         return DataLoader(self.movie_test, batch_size = self.batch_size)
-    # 인스턴스 없이도 확인할 수 있도록
+    # 인스턴스 없이도 확인할 수 있도록 static method로 설정
     @staticmethod
     def add_to_argparse(parser):
         parser.add_argument('--max_len', type = int, default = 100)

@@ -63,7 +63,7 @@ class MultiHeadedAttention(nn.Module):
         self.hidden_dim = hidden_dim
         # V와 K가 같은 경우로 진행.
         # 각 head의 dim 차원
-        self.head_dim = hidden_dim / head_num
+        self.head_dim = hidden_dim // head_num
         self.head_num = head_num
         # Q,K,V에 적용될 Linear Layer
         self.query_linear = nn.Linear(hidden_dim, hidden_dim)
@@ -108,7 +108,7 @@ class MultiHeadedAttention(nn.Module):
         attention_seq = torch.matmul(attention, value).contiguous()
         # output : [batch, query_len, hidden_dim]
         attention_seq = attention_seq.view(batch_size, -1, self.hidden_dim)
-        attention_seq = self.output_layer(attention_seq)
+        attention_seq = self.output_linear(attention_seq)
         
         # attention은 시각화 및 분석에 활용 가능
         return attention_seq, attention
@@ -223,7 +223,7 @@ class BERT(nn.Module):
         # seq엔 이미 zero padding이 된 상태
         # mask : [batch_size, seq_len] -> [batch_size, 1, seq_len] -> [batch_size, 1, 1, seq_len]
         # 브로드 캐스팅 이용
-        mask = (seq > 0).squeeze(1).squeeze(1)
+        mask = (seq > 0).unsqueeze(1).unsqueeze(1)
         # embedding the indexed sequence to sequence of vectors
         seq = self.embedding(seq, segment_info)
         # running over multiple transformer blocks

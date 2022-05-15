@@ -18,6 +18,7 @@ class MovieLens(Dataset):
         self.max_len = max_len
         self.mask_prob = mask_prob
         self.data_dir = data_dir
+        self.df = None
         self.neg_sample_size = neg_sample_size
         self.user_seq, self.item_seq, self.user2idx, self.item2idx, self.vocab_size = self.preprocess()
         self.negative_sample = self.popular_sampler(self.item_seq)
@@ -38,10 +39,13 @@ class MovieLens(Dataset):
         df['user_id'] = df['user_id'].map(user2idx)
         df['item_id'] = df['item_id'].map(item2idx)
         # 유저 별 시퀀스 생성을 위해 정렬
-        df.sort_values(by='timestamp', inplace=True)
+        df.sort_values(by='timestamp', inplace = True)
         # 시퀀스 데이터 생성을 위해 userId로 그룹화
         # pad, mask 토큰으로 token
-        return df.groupby(by='user_id'), df.groupby(by="item_id").size(), user2idx, item2idx, vocab_size
+        user_seq = df.groupby(by="user_id")
+        user_seq = user_seq.apply(lambda user : list(user["item_id"]))
+
+        return user_seq, df.groupby(by="item_id").size(), user2idx, item2idx, vocab_size
     
     def popular_sampler(self, item_seq):
         """
@@ -61,7 +65,7 @@ class MovieLens(Dataset):
         labels = []
         # Train dataset 생성
         if self.mode == "Train":   
-            for item in seq:
+            for item in seq[:-2]:
                 prob = np.random.random()
                 # 설정한 mask_prob보다 작을 경우
                 if prob < self.mask_prob:
@@ -89,6 +93,33 @@ class MovieLens(Dataset):
             labels = [PAD for _ in range(mask_len)] + labels
             # index 이기 때문에 longTensor로 반환
             return torch.LongTensor(tokens), torch.LongTensor(labels)
+        # Valid dataset 생성                              
+        elif self.mode == "Valid":
+        # leave one out validation 진행                                
+            tokens = seq[:-1]
+            # negative sampling에 사용될 토큰 담기                     
+            candidates = []
+            candidates.append(seq[-2])
+            # 100개의 sample 넣기
+            sample_count = 0
+            for item in self.negative_sample:
+                if sample_count == self.neg_sample_size:
+                    break
+                # 토큰 추가
+                if item not in set(tokens):
+                    candidates.append(item)
+                    sample_count += 1
+            # token 재 할당
+            tokens = tokens[:-1] + [MASK]
+            tokens = tokens[-self.max_len:] # max_len 까지의 아이템만 활용
+            # 얼마나 mask할지 결정
+            mask_len = self.max_len - len(tokens)
+            # mask 진행
+            tokens = [PAD for _ in range(mask_len)] + tokens
+            # labels 정보 입력
+            labels = [TRUE] + [FALSE] * self.neg_sample_size
+            # seq, target + neg sample token, tartget + neg sample
+            return torch.LongTensor(tokens), torch.LongTensor(candidates), torch.LongTensor(labels)
         # Test dataset 생성                              
         elif self.mode == "Test":
         # leave one out validation 진행                                
