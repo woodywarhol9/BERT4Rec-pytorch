@@ -23,3 +23,4 @@ https://arxiv.org/abs/1904.06690
 └── trainer.py
 ```
 - Pytorch lightning을 사용하기 위해서 module화 진행
+- 수정 중
