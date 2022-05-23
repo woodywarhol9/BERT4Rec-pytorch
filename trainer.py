@@ -36,18 +36,18 @@ def main():
     data = DataModule(args)
     lit_model = BERT4REC(args)
 
-    logger = pl.loggers.TensorBoardLogger("training/logs")
+    logger = pl.loggers.TensorBoardLogger("training/logs", name = "BERT4REC")
     #early_stopping_callback = pl.callbacks.EarlyStopping(monitor="val_loss", mode="min", patience=10)
     #model_checkpoint_callback = pl.callbacks.ModelCheckpoint(
     #    filename="{epoch:03d}-{val_loss:.3f}-{val_cer:.3f}", monitor="val_loss", mode="min"
-    #)
+    #
+    # trainer flag 설정
     args.weights_summary = "full"  # Print full summary of the model
     args.gpus = 1
-    
+    args.max_epochs = 100
     trainer = pl.Trainer.from_argparse_args(args, logger=logger, weights_save_path="training/logs")
     # batch_size, lr 검색
     #trainer.tune(lit_model, datamodule = data)  # If passing --auto_lr_find, this will set learning rate
-
     trainer.fit(lit_model, datamodule = data)
     trainer.test(lit_model, datamodule = data)
     # pylint: enable=no-member
