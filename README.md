@@ -1,9 +1,9 @@
 # BERT4Rec_pytorch
 
-BERT4Rec 구현하기   
+BERT4Rec in Pytorch   
 https://arxiv.org/abs/1904.06690
 
-모델 구조
+### Model structure
 ```sh
 BERT4REC(
   (model): BERT(
@@ -66,7 +66,7 @@ BERT4REC(
   (out): Linear(in_features=256, out_features=3708, bias=True)
 ```
 
-프로젝트 구조
+### Project structure
 ```sh
 ├── data
 │   ├── dataset.py
@@ -91,5 +91,11 @@ BERT4REC(
 - bert.py : BERT 모델 구성
 - lit_model.py : Pytorch lightning의 ModelModule 역할. MLM 수행
 - trainer.py - args 입력 받아 훈련 시작
+- 
+### How to run
+```
+python trainer.py
+```
+
 
 수정 중
