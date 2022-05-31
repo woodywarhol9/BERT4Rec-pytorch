@@ -31,7 +31,7 @@ class DataModule(pl.LightningDataModule):
         self.movie_train = MovieLens(
             mode="Train", max_len=self.max_len, mask_prob=self.mask_prob, data_dir=self.data_dir)
         # vocab size 재할당
-        args.vocab_size = self.movie_train.vocab_size
+        args.item_size = self.movie_train.item_size
 
     def prepare_data(self):
         """
@@ -59,12 +59,11 @@ class DataModule(pl.LightningDataModule):
         return DataLoader(self.movie_train, batch_size=self.batch_size, shuffle=True, pin_memory=self.pin_memory, num_workers=self.num_workers)
 
     def val_dataloader(self):
-        return DataLoader(self.movie_valid, batch_size=self.batch_size, pin_memory=self.pin_memory, num_workers=self.num_workers)
+        return DataLoader(self.movie_valid, batch_size=self.batch_size, shuffle=False, pin_memory=self.pin_memory, num_workers=self.num_workers)
 
     def test_dataloader(self):
-        return DataLoader(self.movie_test, batch_size=self.batch_size, pin_memory=self.pin_memory, num_workers=self.num_workers)
+        return DataLoader(self.movie_test, batch_size=self.batch_size, shuffle=False, pin_memory=self.pin_memory, num_workers=self.num_workers)
     # 인스턴스 없이도 확인할 수 있도록 static method로 설정
-
     @staticmethod
     def add_to_argparse(parser):
         parser.add_argument('--max_len', type=int, default=100)
@@ -76,5 +75,6 @@ class DataModule(pl.LightningDataModule):
         parser.add_argument('--pin_memory', type=bool, default=True)
         parser.add_argument('--num_workers', type=int, default=4)
         # ml - 1m
-        parser.add_argument('--vocab_size', type=int, default=3708)
+        parser.add_argument('--item_size', type=int, default=3706)
+        
         return parser
