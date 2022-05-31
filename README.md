@@ -86,16 +86,27 @@ BERT4REC(
 └── trainer.py
 ```
 
-- dataset.py : 전처리 및 Train/Valid/Test 데이터셋 생성
-- datamodule.py : Pytorch lightning의 DataModule 역할. DataLoader 생성
-- bert.py : BERT 모델 구성
-- lit_model.py : Pytorch lightning의 ModelModule 역할. MLM 수행
-- trainer.py - args 입력 받아 훈련 시작
-- 
+- dataset.py : 데이터 전처리, Dataset 생성
+
+- datamodule.py : DataModule 정의, DataLoader 생성
+
+- bert.py : BERT 모델 정의
+
+- lit_model.py : 훈련 및 검증에 사용될 Module 정
+의
+
+- trainer.py : Trainer 정의
+
+
 ### How to run
 ```
 python trainer.py
 ```
+### Check log data
+```
+tensorboard --logdir=training
+```
+### Update   
 
 
-수정 중
+- 2022-05-31 : 오류 수정 완료
