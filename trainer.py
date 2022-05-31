@@ -1,5 +1,6 @@
 import argparse
 import pytorch_lightning as pl
+import datetime
 
 from datamodule import DataModule
 from lit_model import BERT4REC
@@ -24,12 +25,15 @@ def _set_trainer_args(args):
     """
     Trainer args를 지정.
     """
-    args.weight_summary = "full"
+    args.weights_summary = "full"
     args.gpus = 1
     args.max_epochs = 100
     args.track_grad_norm = 2
     args.detect_anomaly = True
-    args.gradient_clip_val = 5
+    args.gradient_clip_val = 5.0
+    args.profiler = "simple"
+    args.gradient_clip_algorithm = "norm"
+    args.save_dir = "Training/logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 def main():
     """
@@ -46,12 +50,11 @@ def main():
     data = DataModule(args)
     lit_model = BERT4REC(args)
 
-    logger = pl.loggers.TensorBoardLogger("training/logs", name = "BERT4REC")
-    early_stopping = pl.callbacks.EarlyStopping(monitor="val_loss", mode="min", patience=10)
+    logger = pl.loggers.TensorBoardLogger(save_dir = args.save_dir, name = "BERT4REC")
+    early_stopping = pl.callbacks.EarlyStopping(monitor="val_loss", mode="min", patience=100)
     lr_monitor = pl.callbacks.LearningRateMonitor(logging_interval='step')
-    #model_checkpoint_callback = pl.callbacks.ModelCheckpoint(
-    #    filename="{epoch:03d}-{val_loss:.3f}-{val_cer:.3f}", monitor="val_loss", mode="min"
-    trainer = pl.Trainer.from_argparse_args(args, logger=logger, callbacks=[lr_monitor, early_stopping], weights_save_path="training/logs")
+    
+    trainer = pl.Trainer.from_argparse_args(args, logger=logger, callbacks=[lr_monitor, early_stopping], weights_save_path=args.save_dir)
 
     trainer.fit(lit_model, datamodule=data)
     trainer.test(lit_model, datamodule=data)
