@@ -110,3 +110,4 @@ tensorboard --logdir=training
 
 
 - 2022-05-31 : 오류 수정 완료
+- 2022-06-03 : 코드 리팩토링
