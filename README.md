@@ -92,10 +92,22 @@ BERT4REC(
 
 - bert.py : BERT 모델 정의
 
-- lit_model.py : 훈련 및 검증에 사용될 Module 정
-의
+- lit_model.py : 훈련 및 검증에 사용될 Module 정의
 
 - trainer.py : Trainer 정의
+
+### requirements
+```
+pip install -r requirements.txt
+```
+```
+torch==1.9.0
+torchmetrics==0.7.2
+pandas==1.3.4
+numpy==1.19.5
+pytorch-lightning==1.5.10
+tensorboard==2.8.0
+```
 
 
 ### How to run
